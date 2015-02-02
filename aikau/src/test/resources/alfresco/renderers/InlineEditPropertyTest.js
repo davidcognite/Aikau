@@ -19,186 +19,272 @@
 
 /**
  * @author Dave Draper
+ * @author Martin Doyle
  */
 define(["intern!object",
-        "intern/chai!expect",
-        "intern/chai!assert",
-        "require",
-        "alfresco/TestCommon",
-        "intern/dojo/node!leadfoot/keys"], 
-        function (registerSuite, expect, assert, require, TestCommon, keys) {
+      "intern/chai!expect",
+      "intern/chai!assert",
+      "require",
+      "alfresco/TestCommon",
+      "intern/dojo/node!leadfoot/keys"
+   ],
+   function(registerSuite, expect, assert, require, TestCommon, keys) {
 
-   registerSuite({
-      name: 'Inline Edit Property Test',
-      'Basic': function () {
+      var browser;
 
-         var browser = this.remote;
-         var testname = "Inline Edit Property Basic Test";
-         return TestCommon.loadTestWebScript(this.remote, "/InlineEditProperty", testname)
+      registerSuite({
+         name: "InlineEditProperty",
 
-            // Check that the edit icon isn't initially displayed...
-            .findByCssSelector("#INLINE_EDIT .editIcon")
-               .isDisplayed()
-               .then(function(result) {
-                  assert(result === false, "Test #1a - The edit icon should not be displayed");
-               })
-               .end()
+         setup: function() {
+            browser = this.remote;
+            return TestCommon.loadTestWebScript(this.remote, "/InlineEditProperty", "InlineEditProperty")
+               .end();
+         },
 
-            // Check that the property is rendered correctly...
-            .findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+         beforeEach: function() {
+            browser.end();
+         },
+
+         teardown: function() {
+            browser.end()
+               .alfPostCoverageResults(browser);
+         },
+
+         "Property is rendered correctly": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
                .getVisibleText()
                .then(function(text) {
-                  assert(text === "Test", "Test #1b - The read only value was not rendered correctly: " + text);
-               })
-               .end()
+                  assert.equal(text, "Test", "Value not rendered correctly");
+               });
+         },
 
-            // Check that the edit widget is not created...
-            .findAllByCssSelector("#INLINE_EDIT > .editWidgetNode > *")
+         "Edit widget not initially created": function() {
+            return browser.findAllByCssSelector("#INLINE_EDIT > .editWidgetNode > *")
                .then(function(elements) {
-                  assert(elements.length === 0, "Test #1c - The edit widget node should be empty until needed");
-               })
-               .end()
+                  assert.lengthOf(elements, 0, "Edit widget node should be empty until needed");
+               });
+         },
 
-            // Move the mouse to the property and check that the icon appears...
-            .findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+         "Edit icon initially invisible": function() {
+            return browser.findByCssSelector("#INLINE_EDIT .editIcon")
+               .isDisplayed()
+               .then(function(result) {
+                  assert.isFalse(result, "Icon should not be displayed");
+               });
+         },
+
+         "Icon appears on focus": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
                .then(function(element) {
-                  browser.moveMouseTo(element);
-               })
-               .sleep(500)
+                  element.type(""); // Focus on element
+
+                  browser.end()
+                     .findByCssSelector("#INLINE_EDIT .editIcon")
+                     .isDisplayed()
+                     .then(function(result) {
+                        assert.isTrue(result, "Edit icon was not revealed on focus");
+                     });
+               });
+         },
+
+         "Icon disappears on blur": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+               .then(function(element) {
+                  element.type([keys.SHIFT, keys.TAB]); // Focus away from element
+
+                  browser.end()
+                     .findByCssSelector("#INLINE_EDIT .editIcon")
+                     .isDisplayed()
+                     .then(function(result) {
+                        assert.isFalse(result, "Edit icon was not hidden on blur");
+                     });
+               });
+         },
+
+         "Icon appears on mouseover": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+               .moveMouseTo()
                .end()
 
             .findByCssSelector("#INLINE_EDIT .editIcon")
                .isDisplayed()
                .then(function(result) {
-                  assert(result === true, "Test #2a - The edit icon was not revealed on mouse over");
-               })
+                  assert.isTrue(result, "Edit icon was not revealed on mouse over");
+               });
+         },
 
-               // Click the icon (NOTE: intentionally not ending last chain)
+         "Icon hides on mouseout": function() {
+            return browser.findByCssSelector("body")
+               .moveMouseTo(0, 0)
+               .then(function() {
+                  browser.end()
+                     .findByCssSelector("#INLINE_EDIT .editIcon")
+                     .isDisplayed()
+                     .then(function(result) {
+                        assert.isFalse(result, "Edit icon was not hidden on mouse out");
+                     });
+               });
+         },
+
+         "Edit widgets are created on edit": function() {
+            return browser.findByCssSelector("#INLINE_EDIT .editIcon")
                .click()
                .end()
 
-            // Check that the edit widget is created...
-            .findByCssSelector(".alfresco-forms-controls-DojoValidationTextBox:first-child")
-               .then(
-                  function(){ /* No action required */},
-                  function(){assert(false, "Test #2b - Clicking the edit icon did not create the validation text box");}
-               )
-               .end()
+            .findByCssSelector(".alfresco-forms-controls-TextBox:first-child")
+               .then(null, function() {
+                  assert(false, "Clicking edit icon did not create the validation text box");
+               });
+         },
 
-            // Check that the read property is hidden...
-            .findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+         "Read property is hidden when editing": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
                .isDisplayed()
                .then(function(result) {
-                  assert(result === false, "Test #2c - The read only span was not hidden");
+                  assert.isFalse(result, "Read-only span was not hidden");
+               });
+         },
+
+         "Save and cancel buttons are displayed when editing": function() {
+            return browser.findByCssSelector("#INLINE_EDIT .action.save")
+               .isDisplayed()
+               .then(function(result) {
+                  assert.isTrue(result, "Save button not visible when editing");
                })
                .end()
 
-            // Check that the save and cancel buttons are displayed
-            .findByCssSelector("#INLINE_EDIT .action.save")
-               .isDisplayed()
-               .then(function(result) {
-                  assert(result === true, "Test #2d - The save button was not revealed");
-               })
-               .end()
             .findByCssSelector("#INLINE_EDIT .action.cancel")
                .isDisplayed()
                .then(function(result) {
-                  assert(result === true, "Test #2d - The cancel button was not revealed");
-               })
+                  assert.isTrue(result, "Cancel button not visible when editing");
+               });
+         },
+
+         "Escape key cancels editing": function() {
+            return browser.findByCssSelector(".alfresco-forms-controls-TextBox:first-child")
+               .pressKeys([keys.ESCAPE])
                .end()
 
-            // Use ESC to cancel editing...
-            .pressKeys([keys.ESCAPE])
             .findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
                .isDisplayed()
                .then(function(result) {
-                  assert(result === true, "Test #3a - The read only span was not revealed on edit cancel");
-               })
+                  assert.isTrue(result, "Read-only value not revealed on cancelling edit");
+               });
+         },
+
+         "Clicking on read-only value starts editing": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+               .click()
                .end()
 
-            // Use CTRL-E to start editing...
-            .pressKeys([keys.CONTROL, "e"])
-            .pressKeys([keys.NULL])
-            
-            // Check edit box has reappeared...
-            .findByCssSelector(".alfresco-forms-controls-DojoValidationTextBox:first-child")
+            .findByCssSelector(".alfresco-forms-controls-TextBox:first-child")
                .isDisplayed()
                .then(function(result) {
-                  assert(result === true, "Test #4a - The edit box was not revealed on CTRL-E");
-               })
+                  assert.isTrue(result, "Edit box not revealed when clicking on read-only value");
+               });
+         },
+
+         "Clicking on cancel button stops editing": function() {
+            return browser.findByCssSelector("#INLINE_EDIT .action.cancel")
+               .click()
                .end()
 
-            // Enter some new text...
-            .findByCssSelector("#INLINE_EDIT .dijitInputContainer input")
+            .findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+               .isDisplayed()
+               .then(function(result) {
+                  assert.isTrue(result, "Read-only value not revealed on cancelling edit");
+               });
+         },
+
+         "CTRL-E starts editing": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+               .pressKeys([keys.CONTROL, "e"])
+               .pressKeys(keys.NULL)
+               .end()
+
+            .findByCssSelector(".alfresco-forms-controls-TextBox:first-child")
+               .isDisplayed()
+               .then(function(result) {
+                  assert.isTrue(result, "Edit box not revealed on CTRL-E");
+               });
+         },
+
+         "Changes published on save": function() {
+            return browser.findByCssSelector("#INLINE_EDIT .dijitInputContainer input")
                .clearValue()
                .type("New")
                .end()
-            
-            // Click the save button...
+
             .findByCssSelector("#INLINE_EDIT .action.save")
                .click()
                .end()
 
-            // Check the new value has been published...
             .findAllByCssSelector(TestCommon.topicSelector("ALF_CRUD_UPDATE", "publish", "any"))
                .then(function(elements) {
-                  assert(elements.length == 1, "Test #5a - Property update not requested");
+                  assert.lengthOf(elements, 1, "Property update not requested");
                })
                .end()
+
             .findAllByCssSelector(TestCommon.pubSubDataCssSelector("any", "name", "New"))
                .then(function(elements) {
-                  assert(elements.length == 1, "Test #5b - New value didn't publish correctly");
+                  assert.lengthOf(elements, 1, "New value didn't publish correctly");
                })
                .end()
+
             .findAllByCssSelector(TestCommon.pubSubDataCssSelector("any", "hiddenData", "hidden_update"))
-            .then(function(elements) {
-               assert(elements.length == 1, "Test #5b.1 - Hidden value didn't get included");
-            })
-            .end()
+               .then(function(elements) {
+                  assert.lengthOf(elements, 1, "Hidden value didn't get included");
+               });
+         },
 
-            // Check that the readonly view is displayed again...
-            .findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
+         "Readonly view displayed when finished editing": function() {
+            return browser.findByCssSelector("#INLINE_EDIT > .alfresco-renderers-Property")
                .isDisplayed()
                .then(function(result) {
-                  assert(result === true, "Test #5c - The read only span was not revealed on save");
+                  assert.isTrue(result, "Read-only span not revealed on save");
                })
-               .getVisibleText()
-               .then(function(text) {
-                  assert(text === "New", "Test #5d - The read only value was not updated correctly: " + text);
-               })
-               .end()
 
-            // Check inline edit select (it should fail on update...
-            .findByCssSelector("#INLINE_SELECT > .alfresco-renderers-Property")
+            .getVisibleText()
+               .then(function(text) {
+                  assert.equal(text, "New", "Read-only value not updated correctly");
+               });
+         },
+
+         "Inline-edit select restores values on failed save": function() {
+            return browser.findByCssSelector("#INLINE_SELECT > .alfresco-renderers-Property")
                .then(function(element) {
-                  browser.moveMouseTo(element);
-               })
-               .sleep(500)
-               .end()
-            .findByCssSelector("#INLINE_SELECT .editIcon")
-               .click()
-               .end()
-             .findByCssSelector("#INLINE_SELECT .alfresco-forms-controls-BaseFormControl .dijitArrowButtonInner")
-               .click()
-               .end()
-            .findByCssSelector(".dijitPopup table tr:nth-child(2) td.dijitMenuItemLabel")
-               .click()
-               .end()
-            .findByCssSelector("#INLINE_SELECT .action.save")
-               .click()
-               .end()
-            .findByCssSelector("#INLINE_SELECT > .alfresco-renderers-Property")
-               .isDisplayed()
-               .then(function(result) {
-                  assert(result === true, "Test #6a - The read only span was not revealed on failed save");
-               })
-               .getVisibleText()
-               .then(function(text) {
-                  assert(text === "1", "Test #6b - The read only value was not restored correctly: " + text);
-               })
-               .end()
-            
-            .alfPostCoverageResults(browser);
-      }
+                  return browser.moveMouseTo(element)
+                     .then(function() {
+                        return browser.end()
+                           .findByCssSelector("#INLINE_SELECT .editIcon")
+                           .click()
+                           .end()
+
+                        .findByCssSelector("#INLINE_SELECT .alfresco-forms-controls-BaseFormControl .dijitArrowButtonInner")
+                           .click()
+                           .end()
+
+                        .findByCssSelector(".dijitPopup table tr:nth-child(2) td.dijitMenuItemLabel")
+                           .click()
+                           .end()
+
+                        .findByCssSelector("#INLINE_SELECT .action.save")
+                           .click()
+                           .end()
+
+                        .findByCssSelector("#INLINE_SELECT > .alfresco-renderers-Property")
+                           .isDisplayed()
+                           .then(function(result) {
+                              assert.isTrue(result, "Read-only span not revealed on failed save");
+                           })
+
+                        .getVisibleText()
+                           .then(function(text) {
+                              assert.equal(text, "1", "Read-only value not restored correctly after failed save");
+                           });
+                     });
+               });
+         }
+
+      });
    });
-});

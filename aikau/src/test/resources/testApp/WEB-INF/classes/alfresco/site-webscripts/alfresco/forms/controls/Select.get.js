@@ -9,7 +9,7 @@ model.jsonModel = {
             }
          }
       },
-      "aikauTesting/mockservices/DojoSelectTestOptions",
+      "aikauTesting/mockservices/SelectTestOptions",
       "alfresco/services/ErrorReporter"
    ],
    widgets: [
@@ -21,12 +21,12 @@ model.jsonModel = {
             widgets: [
                {
                   id: "NO_CONFIG",
-                  name: "alfresco/forms/controls/DojoSelect",
+                  name: "alfresco/forms/controls/Select",
                   config: null
                },
                {
                   id: "INVALID_CONFIG",
-                  name: "alfresco/forms/controls/DojoSelect",
+                  name: "alfresco/forms/controls/Select",
                   config: {
                      optionsConfig: {
                         fixed: 1
@@ -34,7 +34,7 @@ model.jsonModel = {
                   }
                },
                {
-                  name: "alfresco/forms/controls/DojoSelect",
+                  name: "alfresco/forms/controls/Select",
                   config: {
                      id: "FIXED_INVALID_CHANGES_TO",
                      fieldId: "Select1",
@@ -53,7 +53,7 @@ model.jsonModel = {
                   }
                },
                {
-                  name: "alfresco/forms/controls/DojoSelect",
+                  name: "alfresco/forms/controls/Select",
                   config: {
                      id: "HAS_UPDATE_TOPICS",
                      fieldId: "Select2",
@@ -80,7 +80,7 @@ model.jsonModel = {
                   }
                },
                {
-                  name: "alfresco/forms/controls/DojoSelect",
+                  name: "alfresco/forms/controls/Select",
                   config: {
                      id:"BASIC_FIXED_OPTIONS",
                      fieldId: "Select3",
@@ -94,7 +94,7 @@ model.jsonModel = {
                   }
                },
                {
-                  name: "alfresco/forms/controls/DojoSelect",
+                  name: "alfresco/forms/controls/Select",
                   config: {
                      id: "HAS_CHANGES_TO",
                      fieldId: "Select4",
@@ -113,6 +113,19 @@ model.jsonModel = {
                            }
                         ],
                         publishTopic: "GET_OPTIONS_FOR_SELECT_4"
+                     }
+                  }
+               },
+               {
+                  id:"XSS_OPTIONS",
+                  name: "alfresco/forms/controls/Select",
+                  config: {
+                     fieldId: "XSS_OPTIONS",
+                     label: "Check XSS Options",
+                     optionsConfig: {
+                        fixed: [
+                           {label:'<img src="1" onerror="window.hackedLabel=true">',value:'<img src="1" onerror="window.hackedValue=true">'}
+                        ]
                      }
                   }
                }
