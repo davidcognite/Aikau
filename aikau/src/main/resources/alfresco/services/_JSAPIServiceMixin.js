@@ -22,7 +22,7 @@
  *
  * To use the JS API inside other services, just mix in this module and then use this.alfrescoJsApi
  *
- * @module alfresco/services/_JSAPIService
+ * @module alfresco/services/_JSAPIServiceMixin
  * @author David Webster
  */
 define(["dojo/_base/declare",
@@ -60,7 +60,7 @@ define(["dojo/_base/declare",
             this.alfrescoJsApi = new AlfrescoApi({
                provider: "ECM",
                hostEcm: window.location.protocol + "//" + window.location.host,
-               // FIXME: JS API code adds /api between this and "-default-" in the API URL.
+               // FIXME: JS API code adds /api between this and "-default-" in the API URL: https://github.com/Alfresco/alfresco-js-api/issues/141
                contextRoot: shareContextRoot + "proxy/alfresco-api"
             });
          }
